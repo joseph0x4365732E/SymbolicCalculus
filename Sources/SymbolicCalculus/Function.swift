@@ -1,15 +1,15 @@
 import Foundation
-
-public final class Function<Number: Finite> {
+/*
+public final class Function<Number: Scalar> {
     //SignedNumeric, Hashable, Comparable
-    var expressions: [ExpressionWrapper<Number>]
+    var expressionWrappers: [ExpressionWrapper<Number>]
     
     init(_ expressions: [ExpressionWrapper<Number>]) {
-        self.expressions = expressions
+        self.expressionWrappers = expressions
     }
     
     init(_ expressions: [any Expression]) {
-        self.expressions = expressions.map { expression in
+        self.expressionWrappers = expressions.map { expression in
             ExpressionWrapper(expression: expression)
         }
     }
@@ -19,23 +19,23 @@ public final class Function<Number: Finite> {
     }
     
     func reduceExpressions() {
-        let expressionsTypeTuples = expressions.map { wrapper in
+        let expressionsTypeTuples = expressionWrappers.map { wrapper in
             ("\(type(of: wrapper.expression))", wrapper)
         }
         let expressionsByType = Dictionary(expressionsTypeTuples) { lhs, rhs in
             lhs + rhs
         }
-        expressions = Array(expressionsByType.values)
+        expressionWrappers = Array(expressionsByType.values)
     }
     
     func f(x: Number) -> Number {
-        expressions.map { expWrapper in
+        expressionWrappers.map { expWrapper in
             expWrapper.eval(x: x)
         }.sum
     }
     
     func equalTo(_ other: Function<Number>) -> Bool {
-        expressions == other.expressions
+        expressionWrappers == other.expressionWrappers
     }
     
     func lessThan(_ other: Function<Number>) -> Bool {
@@ -66,13 +66,13 @@ extension Function: CustomStringConvertible {
 
 extension Function: AdditiveArithmetic {
     public static func + (lhs: Function<Number>, rhs: Function<Number>) -> Self {
-        let sum = Function(lhs.expressions + rhs.expressions)
+        let sum = Function(lhs.expressionWrappers + rhs.expressionWrappers)
         sum.reduceExpressions()
         return sum as! Self
     }
     
     func negated() -> Self {
-        let wrappers = expressions.map { wrapper in
+        let wrappers = expressionWrappers.map { wrapper in
             wrapper.negated()
         }
         return Function(wrappers) as! Self
@@ -86,26 +86,4 @@ extension Function: AdditiveArithmetic {
         fatalError()
     }
 }
-
-//public class CompoundFunction<Number: Finite>: Function<Number> {
-//    var functions: Set<Function<Number>>
-//
-//    init(functions: Function<Number>...) {
-//        self.functions = Set(functions)
-//    }
-//
-//    override func f(x: Number) -> Number {
-//        functions.map { function in
-//            function.f(x: x)
-//        }.sum
-//    }
-//}
-
-public protocol Differentiable: Expression {
-    func nthDerivative(n: N) -> any Expression
-}
-
-public protocol Integrable: Expression {
-    func nthIntegral(n: N) -> any Expression
-}
-
+*/

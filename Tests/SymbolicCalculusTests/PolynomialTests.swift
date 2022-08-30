@@ -25,7 +25,7 @@ final class PolynomialTests: XCTestCase {
     
     func testString() throws {
         let polyA = Polynomial(standardCoefficients: 1, 2)
-        XCTAssertEqual(String(describing: polyA), "1x^1 + 2x^0")
+        XCTAssertEqual(String(describing: polyA), "1.0x^1 + 2.0x^0")
     }
     
     func testAddition() throws {
@@ -39,7 +39,7 @@ final class PolynomialTests: XCTestCase {
     }
     
     func testIdentities() throws {
-        let X = Polynomial(standardCoefficients: 1, 7, 5, 1, 2, 3)
+        let X = Polynomial<Double>(standardCoefficients: 1, 7, 5, 1, 2, 3)
         let Y = Polynomial(standardCoefficients: 1, 3, 9, 8, 7)
         let Z = Polynomial(standardCoefficients: 2, 0, 8, 3, 7)
         
@@ -65,9 +65,10 @@ final class PolynomialTests: XCTestCase {
     }
     
     func testZero() {
-        let zero = Polynomial<Int>.zero
+        let zero = Polynomial<Double>.zero
         XCTAssertEqual(zero, 0)
-        let val = zero.eval(x: Int.random(in: Int.min...Int.max))
+        let range = -(1.0e-100)...(1.0e+100)
+        let val = zero.eval(x: Double.random(in: range))
         XCTAssertEqual(val, 0)
     }
     
@@ -76,5 +77,9 @@ final class PolynomialTests: XCTestCase {
         let polyB = Polynomial(standardCoefficients: 1, 5)
         let polyC = Polynomial(standardCoefficients: 1, 7, 10)
         XCTAssertEqual(polyA * polyB, polyC)
+    }
+    
+    func testLimitsAsX() {
+        
     }
 }

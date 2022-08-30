@@ -44,31 +44,31 @@ public extension Array where Element: AdditiveArithmetic {
     }
 }
 
-extension ClosedRange where Bound: ExpressibleByIntegerLiteral {
-    init() {
-        let zero: Bound = 0
-        self.init(uncheckedBounds: (lower: zero, upper: zero))
-        let boundTypeWidth = MemoryLayout<Bound>.size
-        var negativeOne: Bound = -1
-        withUnsafeMutableBytes(of: &self) { rangeMutableBuffer in
-            let storedBoundWidth = rangeMutableBuffer.count / 2
-            guard storedBoundWidth == boundTypeWidth else {
-                fatalError("Element requires different bound width")
-            }
-            rangeMutableBuffer
-                .baseAddress!
-                .advanced(by: storedBoundWidth)
-                .copyMemory(from: &negativeOne, byteCount: boundTypeWidth)
+infix operator .* : MultiplicationPrecedence
+extension Sequence where Element: Numeric & Hashable {
+    var product: Element {
+        reduce(1, *)
+    }
+    
+    static func .* (lhs: Self, rhs: Element) -> Self {
+        let arr = lhs.map { $0 * rhs }
+        
+        switch lhs {
+        case is Array<Element>: return arr as! Self
+        case is Set<Element>: return Set(arr) as! Self
+        default: fatalError("Unsupported type \(type(of: lhs))")
         }
     }
     
-    func intersection(with other: Self) -> Self {
-        let newLowerBound = Swift.max(lowerBound, other.lowerBound)
-        let newUpperBound = Swift.min(upperBound, other.upperBound)
-        
-        guard newLowerBound < newUpperBound else {
-            return Self()
-        }
-        return newLowerBound...newUpperBound
+}
+
+infix operator ./ : MultiplicationPrecedence
+extension Array where Element: Divisible {
+    static func ./ (lhs: Self, rhs: Element) -> Self {
+        return lhs.map { $0 / rhs }
+    }
+    
+    static func ./ (lhs: Element, rhs: Self) -> Self {
+        return rhs.map { lhs / $0 }
     }
 }
