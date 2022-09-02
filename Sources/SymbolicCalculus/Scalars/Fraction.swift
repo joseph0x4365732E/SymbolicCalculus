@@ -48,6 +48,15 @@ struct Fraction {
         BigInt(sign: sign, magnitude: numerator / denominator)
     }
     
+    public var isWhole: Bool { simplified.denominator == 1 }
+    
+    var factorial: Fraction {
+        guard isWhole else { return .nan }
+        guard self <= 1000 else { return .infinity }
+        let newNumerator = (2...Int(numerator)).map { BigUInt($0) }.product
+        return Fraction(numerator: newNumerator, denominator: 1)
+    }
+    
     // MARK: GCD
     static func gcd(_ lhs: Fraction, _ rhs: Fraction) -> Fraction {
         if (lhs == 0) && (rhs == 0) { return max }
@@ -186,19 +195,16 @@ extension Fraction: Divisible {
     static func % (lhs: Fraction, rhs: Fraction) -> Fraction { .zero }
 }
 
-// MARK: Abs
-extension Fraction: KnownSign {
-    var isNegative: Bool {
-        whole < 0 || (whole == 0 && numerator < 0)
-    }
-    
-    var abs: Fraction { magnitude }
-}
-
 // MARK: Reciprocal
 extension Fraction: Reciprocable {
     var reciprocal: Fraction {
         Fraction(numerator: denominator, denominator: numerator)
             .simplified
     }
+}
+
+// MARK: Static values
+extension Fraction {
+    static var infinity: Fraction { return Fraction(isInfinite: true, numerator: 69420, denominator: 0) }
+    static var nan: Fraction { Fraction(numerator: 1, denominator: 0) }
 }

@@ -1,5 +1,5 @@
 //
-//  UnaryOperation.swift
+//  Abs.swift
 //  
 //
 //  Created by Joseph Cestone on 8/23/22.
@@ -27,25 +27,9 @@ extension Abs: Hashable, CustomStringConvertible {
 
 extension Abs: Boundable{
     public typealias N = AnyScalar
-    public var min: N { AnyScalar(scalar: Swift.min(AnyScalar(scalar: N.zero), AnyScalar(scalar: arg1.min))) }
-    public var max: N { AnyScalar(scalar: arg1.max) }
+    public var min: N { AnyScalar(Swift.min(AnyScalar(N.zero), AnyScalar(arg1.min))) }
+    public var max: N { AnyScalar(arg1.max) }
 }
-
-extension Abs: KnownSign, Absolutable {
-    public var isNegative: Bool { false }
-    public var abs: Abs { self }
-}
-
-    extension Abs: Simplifiable {
-        public func simplified() -> any Expression {
-            let arg1Sim = arg1.simplified()
-            if arg1Sim is Absolutable {
-                return (arg1Sim as! Absolutable).abs as! (any Expression)
-            } else {
-                return Abs(arg1: arg1Sim)
-            }
-        }
-    }
 
 extension Abs: Expression {
     public var eType: ExpressionType { .unaryOperation(uType: .abs, sType: N.staticType ) }
@@ -62,10 +46,12 @@ extension Abs: Expression {
         guard other is Abs else { return false }
         return (other as! Abs) == self
     }
-    
-    public func multiplied(by other: any Expression) -> any Expression {
-        fatalError()
+        
+    public func simplified() -> any Expression {
+        let arg1Sim = arg1.simplified()
+        return arg1Sim.abs
     }
+    public var abs: any Expression { arg1.abs }
 }
 
 //extension Abs: Reciprocable {

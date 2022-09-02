@@ -1,5 +1,5 @@
 //
-//  Finite.swift
+//  Scalar.swift
 //  
 //
 //  Created by Joseph Cestone on 8/18/22.
@@ -7,19 +7,49 @@
 
 import Foundation
 
-public protocol Scalar: CustomStringConvertible, SignedNumeric, Hashable, Comparable, KnownSign {
+extension SignedNumeric where Self: Comparable {
+    var isNegative: Bool { self < Self.zero }
+    var abs: Self { magnitude as! Self }
+}
+
+public protocol Scalar: CustomStringConvertible, SignedNumeric, Hashable, Comparable {
+    init(_ value: Double)
+    
     static var staticType: ScalarType { get }
     var sType: ScalarType { get }
     static var min: Self { get }
     static var max: Self { get }
     static var infinity: Self { get }
+    static var nan: Self { get }
+    var isFinite: Bool { get }
+    var isNaN: Bool { get }
     var double: Double { get }
+    var isWhole: Bool { get }
+    
+    var factorial: Self { get }
     
     func equals(_ other: any Scalar) -> Bool
     func lessThan(_ other: any Scalar) -> Bool
     func plus(_ other: any Scalar) -> Self
     mutating func negate()
-    func multiplied(by other: any Scalar) -> any Scalar
+    func negated() -> Self
+    func multiplied(by other: any Scalar) -> Self
+    func divided(by other: any Scalar) -> Self
+    func power(_ exponent: Int) -> Self
+    func logx(x: any Scalar) -> Self
+}
+
+extension Scalar {
+    public var sqrt: Self { Self(double.squareRoot()) }
+    public var ln: Self { Self(Darwin.log(double)) }
+    public var log2: Self { Self(Darwin.log2(double)) }
+    public var log10: Self { Self(Darwin.log2(double) / Darwin.log2(10.0)) }
+    public func negated() -> Self {
+        var mutable = self
+        mutable.negate()
+        return mutable
+    }
+    public func logx(x: any Scalar) -> Self { Self(Darwin.log2(double) / Darwin.log2(x.double)) }
 }
 
 extension Double: Scalar {
@@ -28,8 +58,14 @@ extension Double: Scalar {
     public static var min: Double { -.greatestFiniteMagnitude }
     public static var max: Double { .greatestFiniteMagnitude }
     public var abs: Double { magnitude }
-    public var isNegative: Bool { self < 0 }
     public var double: Double { self }
+    public var isWhole: Bool { (rounded() - self).abs < (self.ulp * 10) }
+    public var factorial: Double {
+        guard isWhole else { return .nan }
+        guard self <= 171.1 else { return .infinity }
+        return (2...Int(self)).map { Double($0) }.product
+    }
+    
     
     public func equals(_ other: any Scalar) -> Bool {
         guard other is Double else { return false }
@@ -39,10 +75,18 @@ extension Double: Scalar {
     public func plus(_ other: any Scalar) -> Double {
         return self + other.double
     }
-    public func multiplied(by other: any Scalar) -> any Scalar {
+    public func multiplied(by other: any Scalar) -> Double {
         return self * other.double
     }
+    
+    public func divided(by other: any Scalar) -> Double {
+        return self / other.double
+    }
+    public func power(_ exponent: Int) -> Double {
+        pow(self, Double(exponent))
+    }
 }
+
 
 extension Float: Scalar {
     public static var staticType: ScalarType { .float }
@@ -50,8 +94,13 @@ extension Float: Scalar {
     public static var min: Float { -.greatestFiniteMagnitude }
     public static var max: Float { .greatestFiniteMagnitude }
     public var abs: Float { magnitude }
-    public var isNegative: Bool { self < 0 }
     public var double: Double { Double(self) }
+    public var isWhole: Bool { (rounded() - self).abs < (self.ulp * 10) }
+    public var factorial: Float {
+        guard isWhole else { return .nan }
+        guard self <= 34.1 else { return .infinity }
+        return (2...Int(self)).map { Float($0) }.product
+    }
     
     public func equals(_ other: any Scalar) -> Bool {
         guard other is Float else { return false }
@@ -71,12 +120,22 @@ extension Float: Scalar {
             return Float(double + other.double)
         }
     }
-    public func multiplied(by other: any Scalar) -> any Scalar {
+    public func multiplied(by other: any Scalar) -> Float {
         if other is Float {
             return self * (other as! Float)
         } else {
             return Float(self.double * other.double)
         }
+    }
+    public func divided(by other: any Scalar) -> Float {
+        if other is Float {
+            return self / (other as! Float)
+        } else {
+            return Float(self.double / other.double)
+        }
+    }
+    public func power(_ exponent: Int) -> Float {
+        Float(pow(double, Double(exponent)))
     }
 }
 
@@ -96,11 +155,8 @@ extension Fraction: Scalar {
     static var min: Fraction { Fraction(integerLiteral: -Int.max) }
     static var max: Fraction { Fraction(integerLiteral: Int.max) }
     
-    static var infinity: Fraction {
-        return Fraction(isInfinite: true, numerator: 69420, denominator: 0)
-    }
-    
     var isFinite: Bool { !isInfinite }
+    var isNaN: Bool { numerator == 0 && isFinite }
     var double: Double {
         Double(whole) + doubleDecimal
     }
@@ -123,12 +179,28 @@ extension Fraction: Scalar {
             return Fraction(double + other.double)
         }
     }
-    public func multiplied(by other: any Scalar) -> any Scalar {
+    public func multiplied(by other: any Scalar) -> Fraction {
         if other is Fraction {
             return self * (other as! Fraction)
         } else {
             return Fraction(self.double * other.double)
         }
+    }
+    public func divided(by other: any Scalar) -> Fraction {
+        if other is Fraction {
+            return self / (other as! Fraction)
+        } else {
+            return Fraction(self.double / other.double)
+        }
+    }
+    func power(_ exponent: Int) -> Fraction {
+        Fraction(numerator: numerator.power(exponent), denominator: denominator.power(exponent))
+    }
+    public var ln: Fraction { Fraction(Darwin.log(double)) }
+    public var log2: Fraction { Fraction(Darwin.log2(double)) }
+    func logx(x: any Scalar) -> Fraction {
+        #warning("Loss of exactness")
+        return Fraction(Darwin.log2(double) / Darwin.log2(x.double))
     }
 }
 

@@ -197,8 +197,40 @@ extension Polynomial: Expression {
         guard other is Self else { fatalError("Can't multiply Polynomial by other expression type \(other.eType).") }
         return (other as! Self) * self
     }
+    public func power(_ exponent: Int) -> Polynomial<C> {
+        var mutableSelf:Polynomial<C> = 1
+        for _ in 0..<Swift.abs(exponent) {
+            mutableSelf = mutableSelf * self
+        }
+        return (exponent < 0) ? mutableSelf.reciprocal : mutableSelf
+    }
+//    public func nthDerivative(n: C) -> any Expression {
+//        let tuples = coefficientsByPower.filter({ (power, coef) in
+//            power != 0 // constant terms have a derivative of 0.
+//        }).map { (power, coef) in
+//            let newCoef = coef * C(exactly: power)!
+//            let newPower = power - 1
+//            return (newPower, newCoef)
+//        }
+//        return Polynomial(coefficientsByPower: Dictionary(uniqueKeysWithValues: tuples))
+//    }
+//    public func nthIntegral(n: C) -> any Expression {
+//        let tuples = coefficientsByPower.map { (power, coef) in
+//            let newPower = power + 1
+//            let newCoef = Polynomial<C>.divide(coef, by: C(exactly: newPower)!)
+//            return (newPower, newCoef)
+//        }
+//        return Polynomial(coefficientsByPower: Dictionary(uniqueKeysWithValues: tuples))
+//    }
     
     public func simplified() -> any Expression { self }
+    public var abs: any Expression {
+        let newCoefTupes = coefficientsByPower.map { (power, coef) in
+            (power, Swift.abs(coef))
+        }
+        let newCoef = Dictionary(uniqueKeysWithValues: newCoefTupes)
+        return Polynomial(coefficientsByPower: newCoef)
+    }
 }
 
 // MARK: Poly.zero
@@ -268,17 +300,6 @@ extension Polynomial: Multipliable {
     }
 }
 
-// MARK: abs
-extension Polynomial: Absolutable {
-    public var abs: Polynomial<C> {
-        let newCoefTupes = coefficientsByPower.map { (power, coef) in
-            (power, Swift.abs(coef))
-        }
-        let newCoef = Dictionary(uniqueKeysWithValues: newCoefTupes)
-        return Polynomial(coefficientsByPower: newCoef)
-    }
-}
-
 // MARK: reciprocal
 extension Polynomial: Reciprocable {
     public var reciprocal: Polynomial<C> {
@@ -287,17 +308,6 @@ extension Polynomial: Reciprocable {
         }
         let newCoefsByPower = Dictionary(uniqueKeysWithValues: tuples)
         return Polynomial(coefficientsByPower: newCoefsByPower)
-    }
-}
-
-//MARK: raise to power
-extension Polynomial: IntegerPowerable {
-    public func power(exponent: Int) -> Polynomial<C> {
-        var mutableSelf:Polynomial<C> = 1
-        for _ in 0..<Swift.abs(exponent) {
-            mutableSelf = mutableSelf * self
-        }
-        return (exponent < 0) ? mutableSelf.reciprocal : mutableSelf
     }
 }
 
@@ -316,31 +326,5 @@ extension Polynomial where C == Fraction {
         }
         let zeroAddition:[C] = hasConstant ? [] : [0]
         return possiblities + zeroAddition
-    }
-}
-
-// MARK: d/dx
-extension Polynomial: Differentiable {
-    public func nthDerivative(n: C) -> any Expression {
-        let tuples = coefficientsByPower.filter({ (power, coef) in
-            power != 0 // constant terms have a derivative of 0.
-        }).map { (power, coef) in
-            let newCoef = coef * C(exactly: power)!
-            let newPower = power - 1
-            return (newPower, newCoef)
-        }
-        return Polynomial(coefficientsByPower: Dictionary(uniqueKeysWithValues: tuples))
-    }
-}
-
-// MARK: ∫ self dx
-extension Polynomial: Integrable {
-    public func nthIntegral(n: C) -> any Expression {
-        let tuples = coefficientsByPower.map { (power, coef) in
-            let newPower = power + 1
-            let newCoef = Polynomial<C>.divide(coef, by: C(exactly: newPower)!)
-            return (newPower, newCoef)
-        }
-        return Polynomial(coefficientsByPower: Dictionary(uniqueKeysWithValues: tuples))
     }
 }

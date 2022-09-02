@@ -36,3 +36,9 @@ public protocol Divisible {
     static func / (lhs: Self, rhs: Self) -> Self
     static func % (lhs: Self, rhs: Self) -> Self
 }
+
+extension Divisible {
+    public func quotientAndRemainder(dividingBy rhs: Self) -> (quotient: Self, remainder: Self) {
+        (self % rhs, self / rhs)
+    }
+}

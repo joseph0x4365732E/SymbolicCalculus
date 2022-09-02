@@ -20,7 +20,7 @@ final class ArrayExtensionsTests: XCTestCase {
     }
     
     func testZeroRange() {
-        let zero = ClosedRange<Int>()
+        let zero = ClosedRange<Int>.empty
         var foundOne = false
         for _ in 0...100_000 {
             if zero.contains(Int.random(in: Int.min...Int.max)) {
@@ -56,7 +56,7 @@ final class ArrayExtensionsTests: XCTestCase {
     
     func testRangeIntersection() {
         let zero = (0...0).intersection(with: 1...1)
-        XCTAssertEqual(zero, ClosedRange<Int>())
+        XCTAssertEqual(zero, ClosedRange<Int>.empty)
         let intersection = (0...4).intersection(with: 2...6)
         XCTAssertEqual(intersection, 2...4)
         let intersection2 = (-10...40).intersection(with: -22...65)

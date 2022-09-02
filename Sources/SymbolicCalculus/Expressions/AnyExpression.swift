@@ -14,14 +14,8 @@ public struct AnyExpression  {
 
 extension AnyExpression: Boundable {
     public typealias N = AnyScalar
-    public var min: N { AnyScalar(scalar: exp1.min) }
-    public var max: N { AnyScalar(scalar: exp1.max) }
-}
-
-extension AnyExpression: Simplifiable {
-    public func simplified() -> any Expression {
-        exp1.simplified()
-    }
+    public var min: N { AnyScalar(exp1.min) }
+    public var max: N { AnyScalar(exp1.max) }
 }
 
 extension AnyExpression: Hashable {
@@ -50,4 +44,9 @@ extension AnyExpression: Expression {
     public func multiplied(by other: any Expression) -> any Expression {
         exp1.multiplied(by: other)
     }
+    
+    public func simplified() -> any Expression {
+        exp1.simplified()
+    }
+
 }

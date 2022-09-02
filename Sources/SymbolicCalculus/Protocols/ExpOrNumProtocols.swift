@@ -12,22 +12,6 @@ public protocol Zeroable { // All expressions? Not always useful
 }
 
 // UnaryOperators
-public protocol Absolutable { // Not all Expressions
-    var abs: Self { get }
-}
-
-public protocol KnownSign: Absolutable { // Not all Expressions
-    var isNegative: Bool { get }
-}
-
-public protocol Reciprocable {
-    var reciprocal: Self { get }
-}
-
-public protocol IntegerPowerable {
-    func power(exponent: Int) -> Self
-}
-
 public protocol Rootable {
     func perfectRoot(root: Int) -> Self
     func root(root: Int) -> Self

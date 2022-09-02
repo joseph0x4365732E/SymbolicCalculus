@@ -8,7 +8,7 @@
 import Foundation
 
 extension ClosedRange where Bound: ExpressibleByIntegerLiteral {
-    init() {
+    private init() {
         let zero: Bound = 0
         self.init(uncheckedBounds: (lower: zero, upper: zero))
         let boundTypeWidth = MemoryLayout<Bound>.size
@@ -25,13 +25,21 @@ extension ClosedRange where Bound: ExpressibleByIntegerLiteral {
         }
     }
     
+    static var empty: ClosedRange<Bound> { ClosedRange<Bound>() }
+    
     func intersection(with other: Self) -> Self {
         let newLowerBound = Swift.max(lowerBound, other.lowerBound)
         let newUpperBound = Swift.min(upperBound, other.upperBound)
         
         guard newLowerBound < newUpperBound else {
-            return Self()
+            return .empty
         }
         return newLowerBound...newUpperBound
     }
 }
+
+//extension ClosedRange where Bound: SignedNumeric {
+//    func negated() -> ClosedRange<Bound> {
+//        
+//    }
+//}
