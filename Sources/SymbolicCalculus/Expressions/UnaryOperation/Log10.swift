@@ -7,8 +7,12 @@
 
 import Foundation
 
-public struct Log10 {
-    var arg1: any Expression
+public struct Log10: UnaryOperation {
+    public var arg1: any Expression
+    
+    public init(arg1: any Expression) {
+        self.arg1 = arg1
+    }
 }
 
 extension Log10: Hashable, CustomStringConvertible {

@@ -8,49 +8,74 @@
 import Foundation
 import BigInt
 
-struct Fraction {
-    var isInfinite = false
-    var sign: BigInt.Sign
-    var numerator: BigUInt
-    var denominator: BigUInt
+public struct Fraction {
+    public var isInfinite = false
+    public var sign: BigInt.Sign
+    public var numerator: BigUInt
+    public var signedNumerator: BigInt { BigInt(sign: sign, magnitude: numerator) }
+    public var denominator: BigUInt
     
-    init(isInfinite: Bool = false, sign: BigInt.Sign = .plus, numerator: BigUInt, denominator: BigUInt) {
+    public init(isInfinite: Bool = false, sign: BigInt.Sign = .plus, numerator: BigUInt, denominator: BigUInt) {
         self.isInfinite = isInfinite
         self.sign = sign
         self.numerator = numerator
         self.denominator = denominator
     }
     
-    init(numerator: BigInt, denominator: BigInt) {
+    public init(whole: BigInt) {
+        self.sign = whole.sign
+        self.numerator = whole.magnitude
+        self.denominator = 1
+    }
+    
+    public init(numerator: BigInt, denominator: BigInt) {
         let signsTheSame = numerator.sign == denominator.sign
         self.sign = signsTheSame ? .plus : .minus
         self.numerator = numerator.magnitude
         self.denominator = denominator.magnitude
     }
     
-    init(_ double: Double) {
+    public init?(_ string: String) {
+        guard !string.isEmpty else { return nil }
+        
+        guard string.contains("/") else {
+            guard let num = BigInt(string) else { return nil }
+            self.init(whole: num)
+            return
+        }
+        
+        let slashIndex = string.firstIndex(of: "/")!
+        let numStr = string[...slashIndex]
+        let denStr = string[slashIndex...]
+        
+        guard let num = BigInt(numStr) else  { return nil }
+        guard let denom = BigInt(denStr) else { return nil }
+        
+        self.init(numerator: num, denominator: denom)
+    }
+    
+    public init(_ double: Double) {
         self.sign = double.isNegative ? .minus : .plus
         self.numerator = BigUInt(double.significandBitPattern) * BigUInt(2).power(double.exponent)
         self.denominator = BigUInt(2).power(52)
-        
     }
     
-    var doubleDecimal: Double {
+    public var doubleDecimal: Double {
         Double(numerator % denominator) / Double(denominator)
     }
     
-    var simplified: Fraction {
+    public var simplified: Fraction {
         let gcd = numerator.greatestCommonDivisor(with: denominator)
         return Fraction(numerator: numerator / gcd, denominator: denominator / gcd)
     }
     
-    var whole: BigInt {
+    public var whole: BigInt {
         BigInt(sign: sign, magnitude: numerator / denominator)
     }
     
     public var isWhole: Bool { simplified.denominator == 1 }
     
-    var factorial: Fraction {
+    public var factorial: Fraction {
         guard isWhole else { return .nan }
         guard self <= 1000 else { return .infinity }
         let newNumerator = (2...Int(numerator)).map { BigUInt($0) }.product
@@ -58,7 +83,7 @@ struct Fraction {
     }
     
     // MARK: GCD
-    static func gcd(_ lhs: Fraction, _ rhs: Fraction) -> Fraction {
+    public static func gcd(_ lhs: Fraction, _ rhs: Fraction) -> Fraction {
         if (lhs == 0) && (rhs == 0) { return max }
         if lhs == 0 { return rhs }
         if rhs == 0 { return lhs }
@@ -68,7 +93,7 @@ struct Fraction {
         return Fraction(numerator: num, denominator: denom).simplified
     }
     
-    static func gcd(_ fractions: [Fraction]) -> Fraction {
+    public static func gcd(_ fractions: [Fraction]) -> Fraction {
         guard !fractions.isEmpty else {
             return 1
         }
@@ -83,7 +108,7 @@ struct Fraction {
 
 // MARK: Hash, Compare
 extension Fraction: Hashable, Comparable {
-    static func < (lhs: Fraction, rhs: Fraction) -> Bool {
+    public static func < (lhs: Fraction, rhs: Fraction) -> Bool {
         if lhs.whole < rhs.whole { return true }
         if lhs.whole > rhs.whole { return false }
         return lhs.doubleDecimal < rhs.doubleDecimal
@@ -94,15 +119,17 @@ extension Fraction: Hashable, Comparable {
 extension Fraction: CustomStringConvertible {
     public var description: String {
         let sim = simplified
-        return "(\(sim.numerator)/\(sim.denominator))"
+        let signString = sign == .minus ? "-" : ""
+        let magnitudeString = sim.isWhole ? String(sim.numerator): "(\(sim.numerator)/\(sim.denominator))"
+        return signString + magnitudeString
     }
 }
 
 // MARK: Int Literal
 extension Fraction: ExpressibleByIntegerLiteral {
-    typealias IntegerLiteralType = Int
+    public typealias IntegerLiteralType = Int
     
-    init(integerLiteral value: Int) {
+    public init(integerLiteral value: Int) {
         sign = (value < 0) ? .minus : .plus
         numerator = BigUInt(value.magnitude)
         denominator = 1
@@ -111,59 +138,59 @@ extension Fraction: ExpressibleByIntegerLiteral {
 
 // MARK: Add Subtract Multiply
 extension Fraction: AdditiveArithmetic, SignedNumeric {
-    static var zero: Fraction {
+    public static var zero: Fraction {
         Fraction(numerator: 0, denominator: 1)
     }
     
-    static func + (lhs: Fraction, rhs: Fraction) -> Fraction {
-        let newDenom = lhs.denominator.greatestCommonDivisor(with: rhs.denominator)
-        let lhsMultiplier = newDenom / lhs.denominator
-        let rhsMultiplier = newDenom / rhs.denominator
-        let lhsNewNumerator = lhs.numerator * lhsMultiplier
-        let rhsNewNumerator = rhs.numerator * rhsMultiplier
-        var newNumerator = lhsNewNumerator + rhsNewNumerator
-        return Fraction(numerator: newNumerator, denominator: newDenom)
+    public static func + (lhs: Fraction, rhs: Fraction) -> Fraction {
+        let newDenom:BigUInt = lhs.denominator.greatestCommonDivisor(with: rhs.denominator)
+        let lhsMultiplier:BigUInt = newDenom / lhs.denominator
+        let rhsMultiplier:BigUInt = newDenom / rhs.denominator
+        let lhsNewNumerator:BigInt = lhs.signedNumerator * BigInt(lhsMultiplier)
+        let rhsNewNumerator:BigInt = rhs.signedNumerator * BigInt(rhsMultiplier)
+        var newNumerator:BigInt = lhsNewNumerator + rhsNewNumerator
+        return Fraction(numerator: newNumerator, denominator: BigInt(newDenom))
     }
     
-    mutating func negate() {
+    public mutating func negate() {
         sign = (sign == .minus) ? .plus : .minus
     }
     
-    func negated() -> Fraction {
+    public func negated() -> Fraction {
         var mutable = self
         mutable.negate()
         return mutable
     }
     
-    static func - (lhs: Fraction, rhs: Fraction) -> Fraction {
+    public static func - (lhs: Fraction, rhs: Fraction) -> Fraction {
         lhs + rhs.negated()
     }
     
-    typealias Magnitude = Fraction
+    public typealias Magnitude = Fraction
     
-    var magnitude: Fraction {
+    public var magnitude: Fraction {
         return Fraction(numerator: numerator, denominator: denominator)
     }
     
-    init?<T>(exactly source: T) where T : BinaryInteger {
+    public init?<T>(exactly source: T) where T : BinaryInteger {
         self.init(integerLiteral: Int(source))
     }
     
-    static func * (lhs: Int, rhs: Fraction) -> Fraction {
+    public static func * (lhs: Int, rhs: Fraction) -> Fraction {
         return Fraction(numerator: BigInt(lhs) * BigInt(rhs.numerator), denominator: BigInt(rhs.denominator))
             .simplified
     }
     
-    static func * (lhs: Fraction, rhs: Int) -> Fraction {
+    public static func * (lhs: Fraction, rhs: Int) -> Fraction {
         rhs * lhs
     }
     
-    static func * (lhs: Fraction, rhs: Fraction) -> Fraction {
+    public static func * (lhs: Fraction, rhs: Fraction) -> Fraction {
         return Fraction(numerator: lhs.numerator * rhs.numerator, denominator: lhs.denominator * rhs.denominator)
             .simplified
     }
     
-    static func *= (lhs: inout Fraction, rhs: Fraction) {
+    public static func *= (lhs: inout Fraction, rhs: Fraction) {
         lhs = lhs * rhs
     }
 }
@@ -171,33 +198,33 @@ extension Fraction: AdditiveArithmetic, SignedNumeric {
 // MARK: Divide
 extension Fraction: Divisible {
     
-    static func / (lhs: Fraction, rhs: Int) -> Fraction {
+    public static func / (lhs: Fraction, rhs: Int) -> Fraction {
         Fraction(numerator: lhs.numerator, denominator: lhs.denominator * BigUInt(rhs))
             .simplified
     }
     
     
-    static func / (lhs: Int, rhs: Fraction) -> Fraction {
+    public static func / (lhs: Int, rhs: Fraction) -> Fraction {
         Fraction(numerator: BigUInt(lhs) * rhs.denominator, denominator: rhs.numerator)
             .simplified
     }
     
-    static func / (lhs: Fraction, rhs: Fraction) -> Fraction {
+    public static func / (lhs: Fraction, rhs: Fraction) -> Fraction {
         (lhs * rhs.reciprocal).simplified
     }
     
-    func isMultiple(of: Self) -> Bool { true }
+    public func isMultiple(of: Self) -> Bool { true }
     
-    func quotientAndRemainder(dividingBy rhs: Fraction) -> (quotient: Fraction, remainder: Fraction) {
+    public func quotientAndRemainder(dividingBy rhs: Fraction) -> (quotient: Fraction, remainder: Fraction) {
         (self / rhs, 0)
     }
     
-    static func % (lhs: Fraction, rhs: Fraction) -> Fraction { .zero }
+    public static func % (lhs: Fraction, rhs: Fraction) -> Fraction { .zero }
 }
 
 // MARK: Reciprocal
 extension Fraction: Reciprocable {
-    var reciprocal: Fraction {
+    public var reciprocal: Fraction {
         Fraction(numerator: denominator, denominator: numerator)
             .simplified
     }
@@ -205,6 +232,6 @@ extension Fraction: Reciprocable {
 
 // MARK: Static values
 extension Fraction {
-    static var infinity: Fraction { return Fraction(isInfinite: true, numerator: 69420, denominator: 0) }
-    static var nan: Fraction { Fraction(numerator: 1, denominator: 0) }
+    public static var infinity: Fraction { return Fraction(isInfinite: true, numerator: 69420, denominator: 0) }
+    public static var nan: Fraction { Fraction(numerator: 1, denominator: 0) }
 }

@@ -7,8 +7,12 @@
 
 import Foundation
 
-public struct Ln {
-    var arg1: any Expression
+public struct Ln: UnaryOperation {
+    public var arg1: any Expression
+    
+    public init(arg1: any Expression) {
+        self.arg1 = arg1
+    }
 }
 
 extension Ln: Hashable, CustomStringConvertible {

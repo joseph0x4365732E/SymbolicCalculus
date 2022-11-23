@@ -32,7 +32,7 @@ extension Boundable {
 //}
 
 public protocol Reciprocable {
-    #warning("Replace with divisible for any Expression")
+    #warning("Replace with divisible? - for any Expression")
     var reciprocal: Self { get }
 }
 
@@ -43,11 +43,13 @@ public protocol Reciprocable {
 
 public protocol Expression: Hashable, CustomStringConvertible, Boundable {
     var eType: ExpressionType { get }
+    var resolved: Bool { get }
     func eval(x: any Scalar) -> any Scalar
     func equals(_ other: any Expression) -> Bool
     func equivalent(to other: any Expression) -> Bool
     
     func plus(_ other: any Expression) -> any Expression
+    func minus(_ other: any Expression) -> any Expression
     func multiplied(by other: any Expression) -> any Expression
     func divided(by other: any Expression) -> any Expression
     func power(_ other: any Expression) -> any Expression
@@ -68,11 +70,15 @@ public protocol Expression: Hashable, CustomStringConvertible, Boundable {
 extension Expression {
     public func equals(_ other: any Expression) -> Bool {
         guard eType == other.eType else { return false }
+        if let anyOther = other as? AnyExpression {
+            return self == anyOther.exp1 as! Self
+        }
         return self == (other as! Self)
     }
     public func equivalent(to other: any Expression) -> Bool { other.simplified().equals(other.simplified()) }
     
     public func plus(_ other: any Expression) -> any Expression { Sum(arg1: simplified(), arg2: other.simplified()) }
+    public func minus(_ other: any Expression) -> any Expression { Difference(arg1: simplified(), arg2: other.simplified()) }
     public func multiplied(by other: any Expression) -> any Expression { Product(arg1: simplified(), arg2: other.simplified()) }
     public func divided(by other: any Expression) -> any Expression { Quotient(arg1: simplified(), arg2: other.simplified()) }
     public func power(_ other: any Expression) -> any Expression { Exponential(arg1: simplified(), arg2: other.simplified()) }

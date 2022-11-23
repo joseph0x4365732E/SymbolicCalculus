@@ -23,6 +23,13 @@ public enum ScalarType {
         case .any:      return 0;
         }
     }
+    
+    var exactPrecision: Bool {
+        switch self {
+        case .fraction: return true
+        default:        return false
+        }
+    }
 }
 
 extension ScalarType: Comparable {

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  AnyExpression.swift
 //  
 //
 //  Created by Joseph Cestone on 8/28/22.
@@ -10,6 +10,11 @@ import Foundation
 public struct AnyExpression  {
     public var eType: ExpressionType { exp1.eType }
     public var exp1: any Expression
+    public var resolved: Bool { exp1.resolved }
+    
+    public init(_ exp1: any Expression) {
+        self.exp1 = exp1
+    }
 }
 
 extension AnyExpression: Boundable {
@@ -48,5 +53,4 @@ extension AnyExpression: Expression {
     public func simplified() -> any Expression {
         exp1.simplified()
     }
-
 }

@@ -7,23 +7,28 @@
 
 import Foundation
 
-struct Exponential {
-    var arg1: any Expression
-    var arg2: any Expression
+public struct Exponential: BinaryOperation {
+    public var arg1: any Expression
+    public var arg2: any Expression
+    
+    public init(arg1: any Expression, arg2: any Expression) {
+        self.arg1 = arg1
+        self.arg2 = arg2
+    }
 }
 
 extension Exponential: Hashable, CustomStringConvertible {
-    static func == (lhs: Exponential, rhs: Exponential) -> Bool {
+    public static func == (lhs: Exponential, rhs: Exponential) -> Bool {
         return lhs.arg1.equals(rhs.arg1) &&
         lhs.arg2.equals(rhs.arg2)
     }
     
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         arg1.hash(into: &hasher)
         arg2.hash(into: &hasher)
     }
     
-    var description: String { arg1.description + " ^ " + arg2.description }
+    public var description: String { arg1.description + " ^ " + arg2.description }
 }
 
 extension Exponential: Boundable {
@@ -55,18 +60,18 @@ extension Exponential: Boundable {
 }
 
 extension Exponential: Expression {
-    var eType: ExpressionType {
+    public var eType: ExpressionType {
         .binaryOperation(
             bType: .exponential,
             sType: ScalarType(combining: arg1.eType.sType, arg2.eType.sType)
         )
     }
-    func eval(x: any Scalar) -> any Scalar { arg1.eval(x: x).multiplied(by: arg2.eval(x: x)) }
+    public func eval(x: any Scalar) -> any Scalar { arg1.eval(x: x).multiplied(by: arg2.eval(x: x)) }
     
-    func simplified() -> any Expression {
+    public func simplified() -> any Expression {
         arg1.power(arg2)
     }
-    var abs: any Expression {
+    public var abs: any Expression {
         let arg1Sim = arg1.simplified()
         let arg2Sim = arg2.simplified()
         

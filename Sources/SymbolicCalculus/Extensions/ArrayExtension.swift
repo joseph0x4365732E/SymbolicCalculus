@@ -7,6 +7,13 @@
 
 import Foundation
 
+extension Array {
+    var onlyElement: Element? {
+        guard count == 1 else { return nil }
+        return first
+    }
+}
+
 public extension Array where Element: AdditiveArithmetic {
     var sum: Element { reduce(Element.zero, +) }
     

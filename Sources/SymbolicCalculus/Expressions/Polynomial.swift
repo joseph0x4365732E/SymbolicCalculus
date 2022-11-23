@@ -107,6 +107,7 @@ extension Polynomial: Expression {
     }
     
     public var eType: ExpressionType { .polynomial(sType: C.staticType) }
+    public var resolved: Bool { true }
     
     //MARK: Lim x -> a
     var limPosInf: C? {
@@ -259,6 +260,9 @@ extension Polynomial: Addable {
         var newPoly = Polynomial(coefficientsByPower: newCoefs)
         newPoly.removeZeroTerms()
         return newPoly
+    }
+    public func plus(_ other: Polynomial<C>) -> Polynomial<C> {
+        self + other
     }
 }
 

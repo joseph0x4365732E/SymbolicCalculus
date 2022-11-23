@@ -7,8 +7,12 @@
 
 import Foundation
 
-public struct Abs {
-    var arg1: any Expression
+public struct Abs: UnaryOperation {
+    public var arg1: any Expression
+    
+    public init(arg1: any Expression) {
+        self.arg1 = arg1
+    }
 }
 
 extension Abs: Hashable, CustomStringConvertible {

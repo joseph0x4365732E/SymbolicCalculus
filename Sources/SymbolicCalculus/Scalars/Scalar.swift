@@ -152,12 +152,12 @@ extension Float: Scalar {
 extension Fraction: Scalar {
     public static var staticType: ScalarType { .fraction }
     public var sType: ScalarType { .fraction }
-    static var min: Fraction { Fraction(integerLiteral: -Int.max) }
-    static var max: Fraction { Fraction(integerLiteral: Int.max) }
+    public static var min: Fraction { Fraction(integerLiteral: -Int.max) }
+    public static var max: Fraction { Fraction(integerLiteral: Int.max) }
     
-    var isFinite: Bool { !isInfinite }
-    var isNaN: Bool { numerator == 0 && isFinite }
-    var double: Double {
+    public var isFinite: Bool { !isInfinite }
+    public var isNaN: Bool { numerator == 0 && isFinite }
+    public var double: Double {
         Double(whole) + doubleDecimal
     }
     
@@ -193,12 +193,12 @@ extension Fraction: Scalar {
             return Fraction(self.double / other.double)
         }
     }
-    func power(_ exponent: Int) -> Fraction {
+    public func power(_ exponent: Int) -> Fraction {
         Fraction(numerator: numerator.power(exponent), denominator: denominator.power(exponent))
     }
     public var ln: Fraction { Fraction(Darwin.log(double)) }
     public var log2: Fraction { Fraction(Darwin.log2(double)) }
-    func logx(x: any Scalar) -> Fraction {
+    public func logx(x: any Scalar) -> Fraction {
         #warning("Loss of exactness")
         return Fraction(Darwin.log2(double) / Darwin.log2(x.double))
     }

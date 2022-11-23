@@ -7,8 +7,12 @@
 
 import Foundation
 
-public struct Negative {
-    var arg1: any Expression
+public struct Negative: UnaryOperation {
+    public var arg1: any Expression
+    
+    public init(arg1: any Expression) {
+        self.arg1 = arg1
+    }
 }
 
 extension Negative: Hashable, CustomStringConvertible {

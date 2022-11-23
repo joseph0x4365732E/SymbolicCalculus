@@ -10,7 +10,7 @@ import Foundation
 public struct Constant<C: Scalar> {
     public var scalar: C
     
-    init(_ scalar: C) {
+    public init(_ scalar: C) {
         self.scalar = scalar
     }
 }
@@ -35,7 +35,8 @@ extension Constant: Expression {
         return eval(x: x as! C)
     }
     
-    public var eType: ExpressionType { .polynomial(sType: C.staticType) }
+    public var eType: ExpressionType { .constant(sType: C.staticType) }
+    public var resolved: Bool { true }
     
     // MARK: eval(x)
     public func eval(x: C) -> C {
@@ -77,8 +78,15 @@ extension Constant: ExpressibleByIntegerLiteral {
 
 // MARK: Const + Const
 extension Constant: Addable {
-    public static func + (lhs: Constant<C>, rhs: Constant<C>) -> Constant<C> {
-        Constant(lhs.scalar + rhs.scalar)
+    public func plus(_ other: Constant<C>) -> Constant<C> {
+        return Constant(scalar + other.scalar)
+    }
+    public func plus(_ other: any Expression) -> any Expression {
+        if other is Self {
+            return plus(other as! Self)
+        } else {
+            return Sum(arg1: simplified(), arg2: other.simplified())
+        }
     }
 }
 
@@ -89,6 +97,10 @@ extension Constant: Negatable  {
     }
     
     public func negated() -> Constant<C> {
+        Constant(-scalar)
+    }
+    
+    public func negated() -> any Expression {
         Constant(-scalar)
     }
 
