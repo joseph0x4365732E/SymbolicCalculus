@@ -1,7 +1,7 @@
 import SymbolicCalculus
 
 
-let parser = ExpressionParser(exact: true)
+let parser = ExpressionParser<AnyScalar>(exact: true)
 
 
 func result(evaluating input: String) -> String {
@@ -11,3 +11,5 @@ func result(evaluating input: String) -> String {
 
 result(evaluating: " 1 - 1")
 result(evaluating: " 1 - -1")
+
+Fraction(1.0)

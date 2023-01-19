@@ -43,24 +43,29 @@ final class PolynomialTests: XCTestCase {
         let Y = Polynomial(standardCoefficients: 1, 3, 9, 8, 7)
         let Z = Polynomial(standardCoefficients: 2, 0, 8, 3, 7)
         
-        // 1. Commutativity:
+        /// 1. Commutativity:
         XCTAssertEqual(X + Y, Y + X)
-        //2. Associativity of vector addition:
-
+        
+        ///2. Associativity of vector addition:
         XCTAssertEqual((X+Y)+Z, X+(Y+Z))
-        //3. Additive identity: For all X,
+        
+        ///3. Additive identity: For all X,
         XCTAssertEqual(0 + X, X + 0)
         XCTAssertEqual(0 + X, X)
-        //4. Existence of additive inverse: For any X, there exists a -X such that
+        
+        ///4. Existence of additive inverse: For any X, there exists a -X such that
         XCTAssertEqual(X + (-X), 0)
-        //5. Associativity of multiplication:
+        
+        ///5. Associativity of multiplication:
         XCTAssertEqual(Y * (Z * X), (Y * Z) * X)
-        //6. Distributivity of sums:
+        
+        ///6. Distributivity of sums:
         XCTAssertEqual((Y + Z) * X, Y * X + Z * X)
-        //8. Scalar multiplication identity:
+        
+        ///8. Scalar multiplication identity:
         XCTAssertEqual(1 * X, X)
         
-        //Multiplication by zero
+        ///Multiplication by zero
         XCTAssertEqual(0 * X, 0)
     }
     

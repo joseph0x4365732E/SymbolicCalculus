@@ -29,7 +29,7 @@ extension Container: Boundable {
 }
 
 extension Container: Expression {
-    public func eval(x: any Scalar) -> any Scalar {
+    public func eval(x: C) -> C {
         fatalError("Cannot evaluate container argument expression.")
     }
     public var eType: ExpressionType { .container(contents: contents) }

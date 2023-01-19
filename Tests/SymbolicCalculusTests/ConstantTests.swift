@@ -14,10 +14,10 @@ final class ConstantTests: XCTestCase {
         let fracB = Fraction(whole: 1)
         
         XCTAssertEqual(
-            AnyExpression(
-                Constant(fracA).minus(Constant(fracB)).simplified()
-            ),
-            AnyExpression(
+            AnyExpression<Fraction>(
+                Constant(fracA) - Constant(fracB)
+            ).simplified(),
+            AnyExpression<Fraction>(
                 Constant(Fraction(whole: 0))
             )
         )

@@ -15,12 +15,6 @@ public struct Constant<C: Scalar> {
     }
 }
 
-// MARK: CustomStringConvertible
-extension Constant: Hashable, CustomStringConvertible {
-    public var description: String {
-        scalar.description
-    }
-}
 
 extension Constant: Boundable {
     public typealias N = C
@@ -29,23 +23,65 @@ extension Constant: Boundable {
     public var max: C { scalar }
 }
 
-extension Constant: Expression {
-    public func eval(x: any Scalar) -> any Scalar {
-        guard x is C else { fatalError("Cannot evaluate \(type(of: self)) with x of type \(x.sType).") }
-        return eval(x: x as! C)
+extension Constant: Hashable, Comparable {
+    public static func == (lhs: Constant<C>, rhs: Constant<C>) -> Bool {
+        lhs.scalar == rhs.scalar
     }
     
+    public static func < (lhs: Constant<C>, rhs: Constant<C>) -> Bool {
+        lhs.scalar < rhs.scalar
+    }
+}
+
+extension Constant: CustomStringConvertible {
+    public var description: String {
+        scalar.description
+    }
+}
+
+extension Constant: AdditiveArithmetic {
+    public static func + (lhs: Constant<C>, rhs: Constant<C>) -> Constant<C> {
+        Constant(lhs.scalar + rhs.scalar)
+    }
+    
+    public static func - (lhs: Constant<C>, rhs: Constant<C>) -> Constant<C> {
+        Constant(lhs.scalar - rhs.scalar)
+    }
+}
+
+extension Constant: ExpressibleByIntegerLiteral {
+    public typealias IntegerLiteralType = Int
+    
+    public init(integerLiteral value: Int) {
+        self.scalar = C(exactly: value)!
+    }
+    
+    public init?<T>(exactly source: T) where T : BinaryInteger {
+        self.scalar = C(exactly: source)!
+    }
+}
+
+extension Constant: Numeric {
+    
+    public var magnitude: C { scalar.abs }
+    
+    public typealias Magnitude = C
+    
+    public static func * (lhs: Constant<C>, rhs: Constant<C>) -> Constant<C> {
+        Constant(lhs.scalar * rhs.scalar)
+    }
+    
+    public static func *= (lhs: inout Constant<C>, rhs: Constant<C>) { lhs = lhs * rhs }
+}
+
+
+extension Constant: Expression {
     public var eType: ExpressionType { .constant(sType: C.staticType) }
     public var resolved: Bool { true }
     
     // MARK: eval(x)
-    public func eval(x: C) -> C {
-        return scalar
-    }
-    
-    public func equals(_ other: any Expression) -> Bool {
-        guard other is Self else { return false }
-        return (other as! Self) == self
+    public func eval(x: AnyScalar) -> AnyScalar {
+        return AnyScalar(scalar)
     }
     public func multiplied(by other: any Expression) -> any Expression {
         guard other is Self else { fatalError("Can't multiply Polynomial by other expression type \(other.eType).") }
@@ -56,7 +92,6 @@ extension Constant: Expression {
 //    }
     
     public var constant: AnyScalar? { AnyScalar(scalar) }
-    public func simplified() -> any Expression { self }
     public var abs: any Expression { Constant(scalar.abs) }
 }
 
@@ -67,73 +102,3 @@ extension Constant: Zeroable {
     }
 }
 
-// MARK: Const(Int)
-extension Constant: ExpressibleByIntegerLiteral {
-    public typealias IntegerLiteralType = Int
-    
-    public init(integerLiteral value: Int) {
-        self.scalar = C(exactly: value)!
-    }
-}
-
-// MARK: Const + Const
-extension Constant: Addable {
-    public func plus(_ other: Constant<C>) -> Constant<C> {
-        return Constant(scalar + other.scalar)
-    }
-    public func plus(_ other: any Expression) -> any Expression {
-        if other is Self {
-            return plus(other as! Self)
-        } else {
-            return Sum(arg1: simplified(), arg2: other.simplified())
-        }
-    }
-}
-
-// MARK: Const - Const
-extension Constant: Negatable  {
-    public mutating func negate() {
-        scalar.negate()
-    }
-    
-    public func negated() -> Constant<C> {
-        Constant(-scalar)
-    }
-    
-    public func negated() -> any Expression {
-        Constant(-scalar)
-    }
-
-    public static func - (lhs: Constant, rhs: Constant) -> Constant {
-        Constant(lhs.scalar - rhs.scalar)
-    }
-}
-
-// MARK: Const * Const
-extension Constant: Multipliable {
-    public static func * (lhs: Constant<C>, rhs: Constant<C>) -> Constant<C> {
-        Constant(lhs.scalar * rhs.scalar)
-    }
-}
-
-// MARK: reciprocal
-extension Constant: Reciprocable {
-    public var reciprocal: Constant<C> {
-        return Constant(C(exactly: 1)!.divided(by: scalar))
-    }
-}
-
-// MARK: d/dx
-//extension Constant: Differentiable {
-//    public func nthDerivative(n: C) -> any Expression {
-//        Constant.zero
-//    }
-//}
-//
-//// MARK: ∫ self dx
-//extension Constant: Integrable {
-//    public func nthIntegral(n: C) -> any Expression {
-//        #warning("ignores the +C of the integral")
-//        return Polynomial(standardCoefficients: constant, C.zero)
-//    }
-//}

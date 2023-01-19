@@ -8,8 +8,6 @@
 import Foundation
 import BigInt
 
-extension BigUInt: Multipliable, Divisible {}
-
 extension BigUInt {
     var primeFactorization: [BigUInt] {
         var factors: [BigUInt] = []

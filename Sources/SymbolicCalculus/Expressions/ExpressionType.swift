@@ -16,7 +16,7 @@ import Foundation
 ///    - `polynomial(ScalarType)` - info might be old
 ///    - `unaryOperation(UnaryOpType`
 ///   -
-public enum ExpressionType: Hashable {
+public indirect enum ExpressionType: Hashable { /// indirect means stored so memory size can grow - to allow recursive storage
     
     /// Position of operator of an `ExpressionType`.
     public enum OperatorPosition {
@@ -76,6 +76,15 @@ public enum ExpressionType: Hashable {
             case .negative:     return .multiplication
             case .factorial:    return .postfix
             default:            return .prefix
+            }
+        }
+        
+        public func stringConversion(arg1: any Expression) -> String {
+            let a1 = arg1.description
+            switch position {
+            case .prefix:   return string + "(" + a1 + ")"
+            case .infix:    fatalError("There are no infix Unary operators")
+            case .postfix:  return "(" + a1 + ")" + string
             }
         }
         
@@ -140,6 +149,16 @@ public enum ExpressionType: Hashable {
             }
         }
         
+        public func stringConversion(arg1: any Expression, arg2: any Expression) -> String {
+            let a1 = arg1.description
+            let a2 = arg2.description
+            switch position {
+            case .prefix:   return string + "(" + a1 + ", " + a2 + ")"
+            case .infix:    return a1 + string + a2
+            case .postfix:  fatalError("There are no postfix Binary operators")
+            }
+        }
+        
         public static var allKeywords: [BinaryOpType] = allCases
     }
     
@@ -149,8 +168,8 @@ public enum ExpressionType: Hashable {
     case constant(sType: ScalarType)
     case variable(name: String)
     case polynomial(sType: ScalarType)
-    case unaryOperation(uType: UnaryOpType, sType: ScalarType)
-    case binaryOperation(bType: BinaryOpType, sType: ScalarType)
+    case unaryOperation(uType: UnaryOpType, sType: ScalarType, arg1Type: ExpressionType)
+    case binaryOperation(bType: BinaryOpType, sType: ScalarType, arg1Type: ExpressionType, arg2Type: ExpressionType)
     
     public var sType: ScalarType {
         switch self {
@@ -159,8 +178,8 @@ public enum ExpressionType: Hashable {
         case .variable(_):                                  return .any
         case .constant(sType: let sType):                   return sType
         case .polynomial(sType: let sType):                 return sType
-        case .unaryOperation(uType: _, sType: let sType):   return sType
-        case .binaryOperation(bType: _, sType: let sType):  return sType
+        case .unaryOperation(uType: _, sType: let sType, _):   return sType
+        case .binaryOperation(bType: _, sType: let sType, _, _):  return sType
         }
     }
     
@@ -171,8 +190,8 @@ public enum ExpressionType: Hashable {
         case .variable(_):                          return 0
         case .constant(sType: _):                   return 0
         case .polynomial(sType: _):                 return 0
-        case .unaryOperation(uType: _, sType: _):   return 1
-        case .binaryOperation(bType: _, sType: _):  return 2
+        case .unaryOperation(uType: _, sType: _, _):   return 1
+        case .binaryOperation(bType: _, sType: _, _, _):  return 2
         }
     }
     
@@ -180,16 +199,16 @@ public enum ExpressionType: Hashable {
         switch self {
         case .empty: return ""
         case .container(let contents): return contents
-        case .unaryOperation(let uType, _): return uType.string
-        case .binaryOperation(let bType, _): return bType.string
+        case .unaryOperation(let uType, _, _): return uType.string
+        case .binaryOperation(let bType, _, _, _): return bType.string
         default: fatalError("ExpressionType \(self) does not have a string.")
         }
     }
     
     public var position: OperatorPosition {
         switch self {
-        case .unaryOperation(let uType, _): return uType.position
-        case .binaryOperation(let bType, _): return bType.position
+        case .unaryOperation(let uType, _, _): return uType.position
+        case .binaryOperation(let bType, _, _, _): return bType.position
         default: fatalError("ExpressionType \(self) does not have an operator position.")
         }
     }
@@ -198,14 +217,32 @@ public enum ExpressionType: Hashable {
         switch self {
         case .container(_):                     return .container
         case .constant(_):                      return .none
-        case .unaryOperation(let uType, _):     return uType.precedence
-        case .binaryOperation(let bType, _):    return bType.precedence
+        case .unaryOperation(let uType, _, _):     return uType.precedence
+        case .binaryOperation(let bType, _, _, _):    return bType.precedence
         default: fatalError("ExpressionType \(self) has no precedence")
         }
     }
     
+    public var simplifiesToConstant: Bool {
+        switch self {
+        case .empty:            return false
+        case .container(_):     return false
+        case .constant(_):      return true
+        case .variable(_):      return false
+        case .polynomial(_):    return false
+        case .unaryOperation(_, _, arg1Type: let arg1Type):
+            return arg1Type.simplifiesToConstant
+        case .binaryOperation(_, _, arg1Type: let arg1Type, arg2Type: let arg2Type):
+            return arg1Type.simplifiesToConstant && arg2Type.simplifiesToConstant
+        }
+    }
+    
     public static var allKeywords: [ExpressionType] =
-    UnaryOpType.allKeywords.map { ExpressionType.unaryOperation(uType: $0, sType: .any) } +
-    BinaryOpType.allKeywords.map { ExpressionType.binaryOperation(bType: $0, sType: .any) }
+    UnaryOpType.allKeywords.map {
+        ExpressionType.unaryOperation(uType: $0, sType: .any, arg1Type: .empty)
+    } +
+    BinaryOpType.allKeywords.map {
+        ExpressionType.binaryOperation(bType: $0, sType: .any, arg1Type: .empty, arg2Type: .empty)
+    }
 }
 

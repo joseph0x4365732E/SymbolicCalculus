@@ -28,28 +28,14 @@ extension Variable: Boundable {
 }
 
 extension Variable: Expression {
-    public func eval(x: any Scalar) -> any Scalar {
-        guard x is C else { fatalError("Cannot evaluate \(type(of: self)) with x of type \(x.sType).") }
-        return eval(x: x as! C)
-    }
     
     public var eType: ExpressionType { .constant(sType: C.staticType) }
     public var resolved: Bool { true }
     
     // MARK: eval(x)
-    public func eval(x: C) -> C {
+    public func eval(x: AnyScalar) -> AnyScalar {
         fatalError("This needs to be changed - should accept dictionary of values for variable names.")
     }
-    
-    public func equals(_ other: any Expression) -> Bool {
-        guard other is Self else { return false }
-        return (other as! Self) == self
-    }
-//    public func power(_ exponent: Int) -> Variable<C> {
-//        Variable(scalar.power(exponent))
-//    }
-    
-    public func simplified() -> any Expression { self }
 }
 
 // MARK: d/dx

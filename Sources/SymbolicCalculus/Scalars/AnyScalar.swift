@@ -10,18 +10,49 @@ import Foundation
 public struct AnyScalar {
     public var scalar: any Scalar
     public var sType: ScalarType { scalar.sType }
+    public static let staticType: ScalarType = .any
+
+    public init(_ value: any Scalar) {
+        self.scalar = value
+    }
     
-    init(_ scalar: any Scalar) {
-        self.scalar = scalar
+    static func withTypedCombine<ReturnType>(
+        lhs: AnyScalar,
+        rhs: AnyScalar,
+        ifDouble: (Double, Double) -> (ReturnType),
+        ifFraction: (Fraction, Fraction) -> (ReturnType)
+    ) -> ReturnType {
+        let type = ScalarType(combining: lhs.sType, rhs.sType)
+        switch type {
+        case .fraction:
+            return ifFraction(Fraction(lhs), Fraction(rhs))
+        case .double:
+            return ifDouble(Double(lhs), Double(rhs))
+        default: fatalError("Invalid scalar type for withTypedCombine: \(type).")
+        }
     }
 }
 
 extension AnyScalar: Hashable, Comparable {
-    public static func == (lhs: AnyScalar, rhs: AnyScalar) -> Bool { lhs.scalar.equals(rhs.scalar) }
+    public static func == (lhs: AnyScalar, rhs: AnyScalar) -> Bool {
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { $0 == $1 },
+            ifFraction: { $0 == $1 }
+        )
+    }
     
     public func hash(into hasher: inout Hasher) { scalar.hash(into: &hasher) }
     
-    public static func < (lhs: AnyScalar, rhs: AnyScalar) -> Bool { lhs.scalar.lessThan(rhs.scalar) }
+    public static func < (lhs: AnyScalar, rhs: AnyScalar) -> Bool {
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { $0 < $1 },
+            ifFraction: { $0 < $1 }
+        )
+    }
 }
 
 extension AnyScalar: CustomStringConvertible {
@@ -29,12 +60,22 @@ extension AnyScalar: CustomStringConvertible {
 }
 
 extension AnyScalar: AdditiveArithmetic {
-    public static func + (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar { AnyScalar(lhs.scalar.plus(rhs.scalar)) }
+    public static func + (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar {
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { AnyScalar($0 + $1) },
+            ifFraction: { AnyScalar($0 + $1) }
+        )
+    }
     
     public static func - (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar {
-        var minus = rhs.scalar
-        minus.negate()
-        return AnyScalar(lhs.scalar.plus(minus))
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { AnyScalar($0 - $1) },
+            ifFraction: { AnyScalar($0 - $1) }
+        )
     }
 }
 
@@ -51,8 +92,12 @@ extension AnyScalar: ExpressibleByIntegerLiteral {
 
 extension AnyScalar: Numeric {
     public static func * (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar {
-        guard lhs.sType == rhs.sType else { fatalError("Cannot multiply different types of AnyScalar: \(lhs.sType) and \(rhs.sType).") }
-        return AnyScalar(lhs.scalar.multiplied(by: rhs.scalar))
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { AnyScalar($0 * $1) },
+            ifFraction: { AnyScalar($0 * $1) }
+        )
     }
     
     public static func *= (lhs: inout AnyScalar, rhs: AnyScalar) { lhs = lhs * rhs }
@@ -65,39 +110,43 @@ extension AnyScalar: SignedNumeric {
 }
 
 extension AnyScalar: Scalar {
+    
+    /// **Initializers**
     public init(_ value: Double) { scalar = value }
-    public static var staticType: ScalarType { .any }
+    
+    /// **Type Enumeration**
+    
+    /// **Static Vars**
+    /// Range
     public static var min: AnyScalar { AnyScalar(-Double(Int.max)) }
     public static var max: AnyScalar { AnyScalar(Double(Int.max)) }
-    
-    public var double: Double { scalar.double }
-    public var isWhole: Bool { scalar.isWhole }
-    public var factorial: AnyScalar { AnyScalar(scalar.factorial) }
-    
-    public var isFinite: Bool { scalar.isFinite }
-    public var isNaN: Bool { scalar.isNaN }
-    
+    /// Special Values
     public static var infinity: AnyScalar { AnyScalar(Double.infinity) }
     public static var nan: AnyScalar { AnyScalar(Double.nan) }
     
+    /// **Computed Vars**
+    /// Computed Bool States
+    public var isWhole: Bool { scalar.isWhole }
+    public var isFinite: Bool { scalar.isFinite }
+    public var isNaN: Bool { scalar.isNaN }
+    /// Computed Values
+    public var double: Double { scalar.double }
+    public var factorial: AnyScalar { AnyScalar(scalar.factorial) }
+    public var sqrt: AnyScalar { AnyScalar(scalar.sqrt) }
+    public var ln: AnyScalar { AnyScalar(scalar.ln) }
+    public var log2: AnyScalar { AnyScalar(scalar.log2) }
+    public var log10: AnyScalar { AnyScalar(scalar.log10) }
     
-    
-    
-    public func equals(_ other: any Scalar) -> Bool { scalar.equals(other) }
-    public func lessThan(_ other: any Scalar) -> Bool { scalar.lessThan(other) }
-    public func plus(_ other: any Scalar) -> AnyScalar { AnyScalar(scalar.plus(other)) }
-    public func multiplied(by other: any Scalar) -> AnyScalar { AnyScalar(scalar.multiplied(by: other)) }
-    public func divided(by other: any Scalar) -> AnyScalar { AnyScalar(scalar.divided(by: other)) }
-    public func power(_ exponent: Int) -> AnyScalar { AnyScalar(scalar.power(exponent)) }
-    public func powerUsingDouble(_ exponent: AnyScalar) -> AnyScalar { AnyScalar(pow(double, exponent.double)) }
-    public func logx(x: any Scalar) -> AnyScalar { AnyScalar(scalar.logx(x: x)) }
-}
-extension AnyScalar: Divisible {
-    public func isMultiple(of: AnyScalar) -> Bool { true }
-    
+    ///  **Functions**
+    /// Exponents
+    /// Division, Modulus
     public static func / (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar {
-        AnyScalar(lhs.scalar.divided(by: rhs.scalar))
+        withTypedCombine(
+            lhs: lhs,
+            rhs: rhs,
+            ifDouble: { AnyScalar($0 / $1) },
+            ifFraction: { AnyScalar($0 / $1) }
+        )
     }
-    
-    public static func % (lhs: AnyScalar, rhs: AnyScalar) -> AnyScalar { .zero }
+    /// Derivative
 }

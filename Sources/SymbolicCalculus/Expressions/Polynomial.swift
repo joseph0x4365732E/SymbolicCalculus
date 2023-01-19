@@ -101,11 +101,9 @@ extension Polynomial: Boundable {
 }
 
 extension Polynomial: Expression {
-    public func eval(x: any Scalar) -> any Scalar {
-        guard x is C else { fatalError("Cannot evaluate \(type(of: self)) with x of type \(x.sType).") }
-        return eval(x: x as! C)
+    public func eval(x: AnyScalar) -> AnyScalar {
+        return AnyScalar(eval(x: C(x)))
     }
-    
     public var eType: ExpressionType { .polynomial(sType: C.staticType) }
     public var resolved: Bool { true }
     
@@ -224,7 +222,6 @@ extension Polynomial: Expression {
 //        return Polynomial(coefficientsByPower: Dictionary(uniqueKeysWithValues: tuples))
 //    }
     
-    public func simplified() -> any Expression { self }
     public var abs: any Expression {
         let newCoefTupes = coefficientsByPower.map { (power, coef) in
             (power, Swift.abs(coef))
@@ -252,7 +249,7 @@ extension Polynomial: ExpressibleByIntegerLiteral {
 }
 
 // MARK: Poly + Poly
-extension Polynomial: Addable {
+extension Polynomial {
     public static func + (lhs: Polynomial<C>, rhs: Polynomial<C>) -> Polynomial<C> {
         let newCoefs = lhs.coefficientsByPower.merging(rhs.coefficientsByPower) { coef1, coef2 in
             coef1 + coef2
@@ -267,7 +264,7 @@ extension Polynomial: Addable {
 }
 
 // MARK: Poly - Poly
-extension Polynomial: Negatable  {
+extension Polynomial  {
     public mutating func negate() {
         coefficientsByPower.forEach { (power, coef) in
             coefficientsByPower[power] = -coef
@@ -288,7 +285,7 @@ extension Polynomial: Negatable  {
 }
 
 // MARK: Poly * Poly
-extension Polynomial: Multipliable {
+extension Polynomial {
     public static func * (lhs: Polynomial<C>, rhs: Polynomial<C>) -> Polynomial<C> {
         let tuples: [(Int,C)] = lhs.coefficientsByPower.flatMap { (lhsPower, lhsCoef) in
             return rhs.coefficientsByPower.map { (rhsPower, rhsCeof) in
@@ -305,7 +302,7 @@ extension Polynomial: Multipliable {
 }
 
 // MARK: reciprocal
-extension Polynomial: Reciprocable {
+extension Polynomial {
     public var reciprocal: Polynomial<C> {
         let tuples = coefficientsByPower.map { power, coefficient in
             (-power, Polynomial<C>.divide(1, by: coefficient))

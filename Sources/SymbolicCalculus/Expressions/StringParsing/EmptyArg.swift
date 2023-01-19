@@ -32,7 +32,7 @@ extension EmptyArg: Boundable {
 extension EmptyArg: Expression {
     public var resolved: Bool { false }
     
-    public func eval(x: any Scalar) -> any Scalar {
+    public func eval(x: C) -> C {
         fatalError("Cannot evaluate empty argument expression.")
     }
     public var eType: ExpressionType { .empty }

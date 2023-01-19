@@ -55,9 +55,12 @@ public struct Fraction {
     }
     
     public init(_ double: Double) {
-        self.sign = double.isNegative ? .minus : .plus
-        self.numerator = BigUInt(double.significandBitPattern) * BigUInt(2).power(double.exponent)
-        self.denominator = BigUInt(2).power(52)
+        let tempSign:BigInt.Sign = double.isNegative ? .minus : .plus
+        
+        let tempNum =  BigUInt(double.significandBitPattern) * BigUInt(2).power(double.exponent)
+        let numSigned = BigInt(sign: tempSign, magnitude: tempNum)
+        let tempDenom: BigInt = BigInt(2).power(52)
+        self = Fraction(numerator: numSigned, denominator: tempDenom).simplified
     }
     
     public var doubleDecimal: Double {
@@ -78,6 +81,7 @@ public struct Fraction {
     public var factorial: Fraction {
         guard isWhole else { return .nan }
         guard self <= 1000 else { return .infinity }
+        if self == 1 { return self }
         let newNumerator = (2...Int(numerator)).map { BigUInt($0) }.product
         return Fraction(numerator: newNumerator, denominator: 1)
     }
@@ -223,7 +227,7 @@ extension Fraction: Divisible {
 }
 
 // MARK: Reciprocal
-extension Fraction: Reciprocable {
+extension Fraction {
     public var reciprocal: Fraction {
         Fraction(numerator: denominator, denominator: numerator)
             .simplified

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class ExpressionParser {
+public final class ExpressionParser<S: Scalar> {
     /// Determines if parsed constants are exact `Fraction` or finite precision
     /// `Double` types
     public var exactPrecision: Bool
@@ -24,7 +24,7 @@ public final class ExpressionParser {
         switch scalarType {
         case .fraction: return Constant(Fraction(str)!)
         case .double: return Constant(Double(str)!)
-        case .float: return Constant(Float(str)!)
+        case .float: fatalError("Not programmed for Float")
         case .float16: fatalError("Not programmed for Float16")
         default:
             fatalError("Unexpected ScalarType: \(scalarType)")
@@ -36,28 +36,10 @@ public final class ExpressionParser {
         switch eType {
         case .container(let contents):
             return try parseLevel(input: contents)
-        case .unaryOperation(uType: let uType, sType: _):
-            switch uType {
-            case .abs:          return Abs()
-            case .negative:     return Negative()
-            case .sqrt:         return Sqrt()
-            case .ln:           return Ln()
-            case .log2:         return Log2()
-            case .log10:        return Log10()
-            case .factorial:    return Factorial()
-            }
-        case .binaryOperation(bType: let bType, sType: _):
-            switch bType {
-            case .sum:              return Sum()
-            case .difference:       return Difference()
-            case .product:          return Product()
-            case .quotient:         return Quotient()
-            case .exponential:      return Exponential()
-            case .logx:             return Logx()
-            case .mod:              return Mod()
-            case .nthDerivative:    return NthDerivative()
-            case .nthIntegral:      return NthIntegral()
-            }
+        case .unaryOperation(uType: let uType, sType: let sType, _):
+            return UnaryOp<S>(uType, sType: sType, arg1: AnyExpression(EmptyArg()))
+        case .binaryOperation(bType: let bType, sType: let sType, _, _):
+            return BinOp<S>(bType, sType: sType, arg1: AnyExpression(EmptyArg()), arg2: AnyExpression(EmptyArg()))
         default:
             fatalError("Cannot create expression of type \(eType)")
         }
@@ -94,7 +76,7 @@ public final class ExpressionParser {
             let range = stack.indices
             let argIndex = index + offset
             guard range.contains(argIndex) else { fatalError("Stack does not contain required argument at offset \(offset) from \(expression.eType.position) expression at index \(index).") }
-            if offset < 0 { index -= 1 }
+            if offset < 0 { index -= 1 } /// why is this?
             return stack.remove(at: argIndex)
         }
         
@@ -106,31 +88,33 @@ public final class ExpressionParser {
         case .constant(_): break
         case .variable(_): break
         case .polynomial(_): break
-        case .unaryOperation(_, _):
-            var unaryOp = expression as! any UnaryOperation
-            unaryOp.arg1 = requireArg(atOffset: expression.eType.position.arg1Index)
+        case .unaryOperation(_, _, _):
+            var unaryOp = expression as! UnaryOp<S>
+            unaryOp.arg1 = AnyExpression(requireArg(atOffset: expression.eType.position.arg1Index))
             expression = unaryOp
-        case .binaryOperation(let bType, _):
-            var unaryOp = expression as! any BinaryOperation
-            unaryOp.arg2 = requireArg(atOffset: bType.position.arg2Index)
-            unaryOp.arg1 = requireArg(atOffset: bType.position.arg1Index)
+        case .binaryOperation(let bType, _, _, _):
+            var unaryOp = expression as! BinOp<S>
+            unaryOp.arg2 = AnyExpression(requireArg(atOffset: bType.position.arg2Index))
+            unaryOp.arg1 = AnyExpression(requireArg(atOffset: bType.position.arg1Index))
             expression = unaryOp
         }
     }
     
     private func addNegatives(in stack: inout [any Expression]) {
         var canAddPrevious = false
-        for index in stack.indices {
+        for index in 0..<stack.count {
             let currentExpression = stack[index]
             switch currentExpression.eType {
-            case .binaryOperation(bType: .difference, sType: _):
+            case .binaryOperation(bType: .difference, sType: _, _, _):
                 if !canAddPrevious && !stack[index].resolved {
-                    stack[index] = Negative()
+                    stack[index] = UnaryOp<S>.negative(arg1: AnyExpression<S>(EmptyArg()))
                 }
-            case .constant(_), .variable(_): canAddPrevious = true
-            default:
-                // update canAddLast for when currentExpression is the previous
                 canAddPrevious = currentExpression.eType.position == .postfix || currentExpression.resolved
+            case .constant(_), .variable(_):
+                canAddPrevious = true
+            default:
+                canAddPrevious = currentExpression.eType.position == .postfix || currentExpression.resolved
+                // update canAddLast for when currentExpression is the previous
             }
         }
     }
@@ -163,8 +147,8 @@ public final class ExpressionParser {
         return try assemble(stack: stack)
     }
     
-    public func parse(input: String) throws -> any Expression {
+    public func parse(input: String) throws -> AnyExpression<S> {
         let res = try parseLevel(input: input.lowercased())
-        return res
+        return AnyExpression<S>(res)
     }
 }
